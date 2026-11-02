@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Auth (better-auth) ----------
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  bio           String?
+  city          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  listings     Listing[]      @relation("SellerListings")
+  purchases    Listing[]      @relation("BuyerListings")
+  likes        Like[]
+  comments     Comment[]
+  reviewsGiven Review[]       @relation("ReviewAuthor")
+  reviewsGot   Review[]       @relation("ReviewTarget")
+  buying       Conversation[] @relation("ConversationBuyer")
+  selling      Conversation[] @relation("ConversationSeller")
+  messages     Message[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------- Marketplace ----------
+
+enum Category {
+  TOPS
+  SHIRTS
+  SWEATERS
+  JACKETS
+  PANTS
+  JEANS
+  DRESSES
+  SKIRTS
+  SHOES
+  SNEAKERS
+  BAGS
+  ACCESSORIES
+  SPORTSWEAR
+  OTHER
+}
+
+enum Gender {
+  WOMEN
+  MEN
+  KIDS
+  UNISEX
+}
+
+enum Condition {
+  NEW_WITH_TAGS
+  NEW
+  VERY_GOOD
+  GOOD
+  SATISFACTORY
+}
+
+enum ListingStatus {
+  ACTIVE
+  RESERVED
+  SOLD
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Int
+  negotiable  Boolean       @default(false)
+  shipping    Boolean       @default(true)
+  category    Category
+  gender      Gender        @default(UNISEX)
+  condition   Condition
+  size        String?
+  brand       String?
+  color       String?
+  material    String?
+  city        String?
+  status      ListingStatus @default(ACTIVE)
+  views       Int           @default(0)
+  soldAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  sellerId String
+  seller   User    @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyerId  String?
+  buyer    User?   @relation("BuyerListings", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  images        ListingImage[]
+  likes         Like[]
+  comments      Comment[]
+  reviews       Review[]
+  conversations Conversation[]
+
+  @@index([sellerId])
+  @@index([status, createdAt])
+  @@index([category])
+}
+
+model ListingImage {
+  id        String  @id @default(cuid())
+  url       String
+  position  Int     @default(0)
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model Like {
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  body      String
+  createdAt DateTime @default(now())
+  listingId String
+  authorId  String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([listingId, createdAt])
+}
+
+// Dojam: ocjena pouzdanosti korisnika nakon kupovine/prodaje
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  body      String?
+  createdAt DateTime @default(now())
+  authorId  String
+  targetId  String
+  listingId String?
+  author    User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  target    User     @relation("ReviewTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@unique([authorId, targetId, listingId])
+  @@index([targetId])
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  listingId String
+  buyerId   String
+  sellerId  String
+  listing   Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer     User      @relation("ConversationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller    User      @relation("ConversationSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@unique([listingId, buyerId])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+  conversationId String
+  senderId       String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}

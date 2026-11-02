@@ -1,36 +1,170 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dvaput
 
-## Getting Started
+**Nosi dvaput.** Marketplace za polovnu odjeću, za resellere i za sve koji žele da njihova odjeća dobije drugi život.
 
-First, run the development server:
+Minimalistički, editorijalni dizajn (crno-bijelo, oštri uglovi, Geist font), male animacije i skeleton kartice dok se sadržaj učitava. Sav interfejs i sve adrese su na srpskom (`/oglasi/novi`, `/moj-ormar`, `/poruke`…).
+
+---
+
+## Šta aplikacija radi
+
+### Kupci
+- **Početna:** veliki banner (slajder sa autoplayem), redovi po kategorijama (Novo u ponudi, Žene, Muškarci, Djeca, Patike, Jakne) sa linkom „Vidi sve".
+- **Stranice kategorija** (`/kategorije/[slug]`): filteri po vrsti, za koga, stanju, cijeni, uz sortiranje i pretragu.
+- **Oglas:** slajder do 5 slika, cijena, stanje, veličina, brend, boja, materijal, grad, dostava i „po dogovoru", profil prodavača sa nivoom povjerenja i komentari.
+- **Lajkovi:** sačuvani oglasi su na jednom mjestu.
+- **Chat sa prodavačem:** razgovor vezan za oglas, sa oznakom nepročitanih poruka.
+
+### Prodavači
+- **Prodaj** (`/oglasi/novi`): forma u 6 koraka, pregled oglasa uživo i traka napretka, drag & drop upload (slike se na klijentu smanjuju na WEBP do 1600 px).
+- **Moj ormar** (`/moj-ormar`): aktivni oglasi, završene prodaje i kupovine, sačuvano, dojmovi i statistika (zarađeno, prodano, ocjena).
+- **Status oglasa:** aktivan, rezervisan ili prodano. Kod prodaje se bira kupac.
+- **Dojmovi i povjerenje:** nakon razgovora kupac i prodavač mogu jedno drugom ostaviti ocjenu 1–5 i komentar. Iz toga se računa nivo: *Novi*, *Oprez*, *Pouzdan* ili *Super pouzdan*.
+
+### Nalog
+- Registracija i prijava emailom i šifrom, uz animaciju prelaza na dashboard.
+- Prijava preko Google naloga (uključuje se kad se upišu ključevi).
+- Reset šifre emailom.
+- Podešavanja profila (ime, grad, bio).
+
+---
+
+## Tehnologije
+
+| | |
+|---|---|
+| Framework | **Next.js 16** (App Router, Turbopack, Server Actions, `proxy.ts`) |
+| Jezik | **TypeScript** |
+| Stilovi | **Tailwind CSS 4** (`@theme` tokeni u `globals.css`) |
+| Baza | **PostgreSQL** + **Prisma 6** |
+| Auth | **better-auth** (email/šifra, Google OAuth, reset šifre) |
+| Validacija | **zod** |
+| UI | motion (animacije), embla-carousel (slajderi), lucide-react (ikone), sonner (toast poruke) |
+| Mail | nodemailer (SMTP). Bez SMTP-a link se ispisuje u terminal |
+
+---
+
+## Pokretanje lokalno
+
+Potrebno: **Node.js 20+**. Postgres ne moraš instalirati, jer projekt sam pokreće lokalni server (`embedded-postgres`).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/bujakasha21/dvaput.git
+cd dvaput
+npm install
+cp .env.example .env          # pa upiši BETTER_AUTH_SECRET (openssl rand -hex 32)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+U **prvom terminalu** pokreni bazu i ostavi je da radi:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run db                    # PostgreSQL na portu 5433, podaci u ./.pgdata
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+U **drugom terminalu**:
 
-## Learn More
+```bash
+npm run db:push               # kreira tabele iz prisma/schema.prisma
+npm run db:seed               # demo korisnici i oglasi (BRIŠE postojeće podatke!)
+npm run dev                   # http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+Demo nalozi iz seeda (šifra `demo1234`): `demo@dvaput.ba`, `ana@demo.ba`, `marko@demo.ba`, `lejla@demo.ba`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ako već imaš svoj Postgres, preskoči `npm run db` i upiši njegov `DATABASE_URL` u `.env`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Skripte
 
-## Deploy on Vercel
+| Komanda | Šta radi |
+|---|---|
+| `npm run dev` | dev server |
+| `npm run build` / `npm start` | produkcijski build i pokretanje |
+| `npm run lint` | ESLint |
+| `npm run db` | lokalni PostgreSQL (embedded) |
+| `npm run db:push` | sinhronizuje šemu sa bazom |
+| `npm run db:seed` | puni bazu demo podacima |
+| `npm run db:studio` | Prisma Studio, pregled baze u browseru |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Varijable okruženja (`.env`)
+
+| Varijabla | Opis |
+|---|---|
+| `DATABASE_URL` | Postgres konekcija. Lokalno: `postgresql://dvaput:dvaput@localhost:5433/dvaput` |
+| `BETTER_AUTH_SECRET` | tajni ključ za sesije: `openssl rand -hex 32` |
+| `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL` | adresa aplikacije (`http://localhost:3000`) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google prijava (opcionalno, vidi ispod) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | slanje maila za reset šifre (opcionalno) |
+
+### Google prijava
+1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials), pa *Create credentials* i *OAuth client ID* (tip *Web application*).
+2. *Authorized redirect URI*: `http://localhost:3000/api/auth/callback/google` (za produkciju dodaj i svoju domenu).
+3. Upiši ID i secret u `.env` i restartuj `npm run dev`. Dugme „Nastavi s Google" se tada uključuje.
+
+---
+
+## Struktura projekta
+
+```
+prisma/
+  schema.prisma          korisnici, sesije, oglasi, slike, lajkovi, komentari, dojmovi, razgovori, poruke
+  seed.ts                demo podaci
+scripts/db.mjs           lokalni embedded PostgreSQL
+src/
+  proxy.ts               preusmjerava neprijavljene sa zaštićenih ruta na /prijava
+  lib/
+    auth.ts              better-auth konfiguracija (server)
+    auth-client.ts       better-auth klijent
+    queries.ts           zajednički upiti, nivo povjerenja
+    collections.ts       kategorije i kolekcije (slugovi za /kategorije/*)
+    constants.ts         nazivi kategorija, stanja, veličine
+  app/
+    page.tsx             početna (banner + redovi po kategorijama)
+    kategorije/[slug]/   lista sa filterima
+    oglasi/[id]/         oglas, komentari, akcije vlasnika
+    oglasi/novi/         nova objava
+    oglasi/[id]/uredi/   izmjena oglasa
+    moj-ormar/           dashboard + podešavanja
+    poruke/              lista razgovora + chat
+    korisnici/[id]/      javni profil i dojmovi
+    (auth)/              prijava, registracija, zaboravljena i nova lozinka
+    actions/             server akcije (oglasi, lajkovi, komentari, dojmovi, chat, profil)
+    api/upload           upload slika → storage/uploads
+    api/conversations    polling novih poruka (svake 3 s)
+    uploads/[file]       servira uploadovane slike
+  components/            navbar, banner, kartice, forme, slajderi, UI primitivi
+```
+
+### Rute
+
+| Adresa | Stranica |
+|---|---|
+| `/` | početna |
+| `/kategorije/sve`, `/kategorije/zene`, `/kategorije/patike`… | liste sa filterima |
+| `/oglasi/[id]` | oglas |
+| `/oglasi/novi`, `/oglasi/[id]/uredi` | objava i izmjena (prijava obavezna) |
+| `/moj-ormar`, `/moj-ormar?tab=zavrseno\|sacuvano\|dojmovi`, `/moj-ormar/podesavanja` | dashboard |
+| `/poruke`, `/poruke/[id]` | chat |
+| `/korisnici/[id]` | javni profil |
+| `/prijava`, `/registracija`, `/zaboravljena-lozinka`, `/nova-lozinka` | nalog |
+
+Stare engleske adrese (`/login`, `/dashboard`, `/listings/…`) trajno (301) preusmjeravaju na nove, a podešene su u `next.config.ts`.
+
+---
+
+## Prije produkcije
+
+- **Slike:** lokalni `storage/` ne radi na serverless hostingu (Vercel). Treba ih prebaciti na S3, Cloudflare R2 ili Cloudinary (`src/app/api/upload/route.ts`).
+- **Baza:** hostovani Postgres (Neon, Supabase, Railway…) u `DATABASE_URL`, pa `npm run db:push`.
+- **Mail:** SMTP podaci (npr. Resend, Postmark, Brevo) za reset šifre.
+- **Google OAuth:** dodati produkcijsku domenu u redirect URI.
+- **Chat:** trenutno radi preko pollinga. Za real-time bi trebali Pusher, Ably ili WebSocket.
+
+## Plan
+
+- [ ] Plaćanje i zaštita kupca
+- [ ] Notifikacije (email/push) za nove poruke i lajkove
+- [ ] Ponude („pošalji ponudu" ispod cijene)
+- [ ] Praćenje prodavača i feed
+- [ ] Prijava neprimjerenih oglasa i moderacija

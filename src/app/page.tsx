@@ -1,69 +1,88 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import type { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { likedIdsFor, listingCardSelect } from "@/lib/queries";
+import { FEATURED_SLUGS, collectionHref, collectionWhere, getCollection } from "@/lib/collections";
+import { ListingCard, ListingCardSkeleton } from "@/components/listing-card";
+import { HomeBanner } from "@/components/home-banner";
 
-export default function Home() {
+const ROW_SIZE = 4;
+
+export default async function HomePage() {
+  const session = await getSession();
+  const userId = session?.user.id;
+  const rows = [
+    { slug: "sve", title: "Novo u ponudi", where: {} },
+    ...FEATURED_SLUGS.map((slug) => {
+      const c = getCollection(slug)!;
+      return { slug, title: c.title, where: collectionWhere(c) };
+    }),
+  ];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <>
+      <section className="animate-fade-up mx-auto max-w-7xl px-4 pt-4 pb-6 sm:px-8 sm:pt-6">
+        <HomeBanner />
+      </section>
+
+      <div className="mx-auto max-w-7xl space-y-16 px-4 pt-10 sm:space-y-20 sm:px-8">
+        {rows.map((row) => (
+          <Suspense key={row.slug} fallback={<RowSkeleton title={row.title} />}>
+            <CollectionRow {...row} userId={userId} />
+          </Suspense>
+        ))}
+      </div>
+    </>
+  );
+}
+
+async function CollectionRow({ slug, title, where, userId }: { slug: string; title: string; where: Prisma.ListingWhereInput; userId?: string }) {
+  const listings = await prisma.listing.findMany({
+    where: { status: { in: ["ACTIVE", "RESERVED"] }, ...where },
+    orderBy: { createdAt: "desc" },
+    take: ROW_SIZE,
+    select: listingCardSelect,
+  });
+  if (listings.length === 0) return null;
+  const liked = await likedIdsFor(userId, listings.map((l) => l.id));
+
+  return (
+    <section>
+      <RowHeader title={title} href={collectionHref(slug)} />
+      <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-4 lg:grid-cols-4">
+        {listings.map((listing, i) => (
+          <ListingCard key={listing.id} listing={listing} liked={liked.has(listing.id)} index={i} showLike={listing.seller.id !== userId} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RowHeader({ title, href }: { title: string; href?: string }) {
+  return (
+    <div className="mb-5 flex items-end justify-between gap-4">
+      <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h2>
+      {href && (
+        <Link href={href} className="group flex items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-ink">
+          Vidi sve <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      )}
     </div>
+  );
+}
+
+function RowSkeleton({ title }: { title: string }) {
+  return (
+    <section>
+      <RowHeader title={title} />
+      <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-4 lg:grid-cols-4">
+        {Array.from({ length: ROW_SIZE }, (_, i) => (
+          <ListingCardSkeleton key={i} />
+        ))}
+      </div>
+    </section>
   );
 }
