@@ -54,7 +54,7 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
       <GoogleButton enabled={googleEnabled} />
       <form onSubmit={onSubmit} className="space-y-4">
         <Field label="Ime i prezime">
-          <Input name="name" required minLength={2} autoComplete="name" placeholder="Ana Anić" />
+          <Input name="name" required minLength={2} autoComplete="name" placeholder="Vaše ime i prezime" />
         </Field>
         <Field label="Email">
           <Input name="email" type="email" required autoComplete="email" placeholder="ime@email.com" />
