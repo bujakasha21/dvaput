@@ -23,7 +23,7 @@ const listingSchema = z.object({
   negotiable: z.boolean(),
   shipping: z.boolean(),
   images: z
-    .array(z.string().regex(/^(\/uploads\/[\w-]+\.(webp|jpe?g|png)|https:\/\/images\.unsplash\.com\/.+)$/))
+    .array(z.string().regex(/^(\/uploads\/[\w-]+\.(webp|jpe?g|png)|https:\/\/images\.unsplash\.com\/.+|https:\/\/[\w-]+\.public\.blob\.vercel-storage\.com\/listings\/[\w-]+\.(webp|jpe?g|png))$/))
     .min(1, "Dodaj barem jednu sliku")
     .max(MAX_IMAGES, `Najviše ${MAX_IMAGES} slika`),
 });

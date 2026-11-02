@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { put } from "@vercel/blob";
 import { getSession } from "@/lib/auth";
 import { MAX_IMAGE_BYTES } from "@/lib/constants";
 
@@ -21,6 +22,13 @@ export async function POST(req: Request) {
   if (file.size > MAX_IMAGE_BYTES) return NextResponse.json({ error: "Slika je veća od 5 MB." }, { status: 400 });
 
   const name = `${randomUUID()}.${ext}`;
+
+  // Na Vercelu disk nije trajan, pa slike idu na Vercel Blob. Lokalno ostaju u storage/uploads.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    const blob = await put(`listings/${name}`, file, { access: "public", contentType: file.type });
+    return NextResponse.json({ url: blob.url });
+  }
+
   await mkdir(UPLOAD_DIR, { recursive: true });
   await writeFile(path.join(UPLOAD_DIR, name), Buffer.from(await file.arrayBuffer()));
 

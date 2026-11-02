@@ -39,6 +39,7 @@ Minimalistički, editorijalni dizajn (crno-bijelo, oštri uglovi, Geist font), m
 | Baza | **PostgreSQL** + **Prisma 6** |
 | Auth | **better-auth** (email/šifra, Google OAuth, reset šifre) |
 | Validacija | **zod** |
+| Slike | Vercel Blob na produkciji, lokalni disk u razvoju |
 | UI | motion (animacije), embla-carousel (slajderi), lucide-react (ikone), sonner (toast poruke) |
 | Mail | nodemailer (SMTP). Bez SMTP-a link se ispisuje u terminal |
 
@@ -159,6 +160,7 @@ Produkcija: **https://dvaput.vercel.app**
 
 - Baza je **Neon** (Vercel → Storage → `dvaput-db`, region Frankfurt). Integracija sama postavlja `DATABASE_URL` i ostale `PG*` varijable.
 - Na Vercelu treba ručno postaviti `BETTER_AUTH_SECRET` i `BETTER_AUTH_URL` (`https://dvaput.vercel.app`).
+- Slike oglasa idu na **Vercel Blob** (`dvaput-blob`, Frankfurt, public) kad postoji `BLOB_READ_WRITE_TOKEN`. Lokalno se spremaju u `storage/uploads`.
 - Funkcije rade u `fra1` (`vercel.json`), u istom regionu kao baza.
 - Promjene šeme se šalju na produkcijsku bazu ručno: connection string bez poolera upiši u lokalni `.env.neon` (gitignore ga drži van gita), pa pokreni:
 
@@ -168,7 +170,6 @@ set -a && . ./.env.neon && set +a && npx prisma db push
 
 ## Prije produkcije
 
-- **Slike:** lokalni `storage/` ne radi na serverless hostingu (Vercel). Treba ih prebaciti na S3, Cloudflare R2 ili Cloudinary (`src/app/api/upload/route.ts`).
 - **Mail:** SMTP podaci (npr. Resend, Postmark, Brevo) za reset šifre.
 - **Google OAuth:** dodati produkcijsku domenu u redirect URI.
 - **Chat:** trenutno radi preko pollinga. Za real-time bi trebali Pusher, Ably ili WebSocket.
