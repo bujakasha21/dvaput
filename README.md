@@ -1,183 +1,176 @@
+<div align="center">
+
 # Dvaput
 
-**Nosi dvaput.** Marketplace za polovnu odjeću, za resellere i za sve koji žele da njihova odjeća dobije drugi život.
+**Wear it twice.** A full-stack marketplace for second-hand clothing, built for resellers and for anyone who wants their clothes to get a second life.
 
-Minimalistički, editorijalni dizajn (crno-bijelo, oštri uglovi, Geist font), male animacije i skeleton kartice dok se sadržaj učitava. Sav interfejs i sve adrese su na srpskom (`/oglasi/novi`, `/moj-ormar`, `/poruke`…).
+[**Live demo → dvaput.vercel.app**](https://dvaput.vercel.app)
 
----
+![Next.js](https://img.shields.io/badge/Next.js_16-000?logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?logo=tailwindcss&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-000?logo=vercel&logoColor=white)
 
-## Šta aplikacija radi
+![Home page](docs/home.jpg)
 
-### Kupci
-- **Početna:** veliki banner (slajder sa autoplayem), redovi po kategorijama (Novo u ponudi, Žene, Muškarci, Djeca, Patike, Jakne) sa linkom „Vidi sve".
-- **Stranice kategorija** (`/kategorije/[slug]`): filteri po vrsti, za koga, stanju, cijeni, uz sortiranje i pretragu.
-- **Oglas:** slajder do 5 slika, cijena, stanje, veličina, brend, boja, materijal, grad, dostava i „po dogovoru", profil prodavača sa nivoom povjerenja i komentari.
-- **Lajkovi:** sačuvani oglasi su na jednom mjestu.
-- **Chat sa prodavačem:** razgovor vezan za oglas, sa oznakom nepročitanih poruka.
+</div>
 
-### Prodavači
-- **Prodaj** (`/oglasi/novi`): forma u 6 koraka, pregled oglasa uživo i traka napretka, drag & drop upload (slike se na klijentu smanjuju na WEBP do 1600 px).
-- **Moj ormar** (`/moj-ormar`): aktivni oglasi, završene prodaje i kupovine, sačuvano, dojmovi i statistika (zarađeno, prodano, ocjena).
-- **Status oglasa:** aktivan, rezervisan ili prodano. Kod prodaje se bira kupac.
-- **Dojmovi i povjerenje:** nakon razgovora kupac i prodavač mogu jedno drugom ostaviti ocjenu 1–5 i komentar. Iz toga se računa nivo: *Novi*, *Oprez*, *Pouzdan* ili *Super pouzdan*.
-
-### Nalog
-- Registracija i prijava emailom i šifrom, uz animaciju prelaza na dashboard.
-- Prijava preko Google naloga (uključuje se kad se upišu ključevi).
-- Reset šifre emailom.
-- Podešavanja profila (ime, grad, bio).
+> **Try it:** sign in with the demo account `demo@dvaput.ba` / `demo1234`, or continue with Google.
+> The UI is in Bosnian/Serbian (the target market), including the URLs (`/oglasi/novi`, `/moj-ormar`, `/poruke`).
 
 ---
 
-## Tehnologije
+## Features
+
+**Browsing and buying**
+- Home page with an autoplaying hero banner and category rows (New in, Women, Men, Kids, Sneakers, Jackets).
+- Category pages with filters (type, gender, condition, price range), sorting and search.
+- Listing page with an image slider (up to 5 photos), condition, size, brand, color, material, city, shipping and "negotiable" flags, plus comments.
+- Likes with optimistic UI, collected under *Saved*.
+- **Buyer ↔ seller chat** tied to a listing, with unread badges.
+
+**Selling**
+- A 6-step listing form with a **live preview** and a progress bar, plus drag & drop upload. Images are compressed in the browser to WEBP (max 1600 px) before upload.
+- Seller dashboard: active listings, completed sales and purchases, saved items, reviews, and stats (earned, sold, rating).
+- Listing status: active, reserved or sold. When marking an item as sold, the seller picks the buyer.
+
+**Trust**
+- After a conversation, buyer and seller can review each other (1–5 stars plus a comment).
+- A trust level is computed from reviews: *New*, *Caution*, *Trusted* or *Highly trusted*. It is shown on profiles and listings.
+
+**Accounts**
+- Email/password and **Google sign-in**, with a skeleton "welcome" transition into the dashboard.
+- Password reset by email.
+- Public profiles and profile settings.
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/listing.jpg" alt="Listing page" /></td>
+    <td><img src="docs/mobile.jpg" alt="Mobile home" /></td>
+    <td><img src="docs/mobile-menu.jpg" alt="Mobile menu" /></td>
+  </tr>
+</table>
+
+---
+
+## Tech stack
 
 | | |
 |---|---|
-| Framework | **Next.js 16** (App Router, Turbopack, Server Actions, `proxy.ts`) |
-| Jezik | **TypeScript** |
-| Stilovi | **Tailwind CSS 4** (`@theme` tokeni u `globals.css`) |
-| Baza | **PostgreSQL** + **Prisma 6** |
-| Auth | **better-auth** (email/šifra, Google OAuth, reset šifre) |
-| Validacija | **zod** |
-| Slike | Vercel Blob na produkciji, lokalni disk u razvoju |
-| UI | motion (animacije), embla-carousel (slajderi), lucide-react (ikone), sonner (toast poruke) |
-| Mail | nodemailer (SMTP). Bez SMTP-a link se ispisuje u terminal |
+| Framework | **Next.js 16**: App Router, Server Components, Server Actions, Turbopack, `proxy.ts` |
+| Language | **TypeScript** (strict) |
+| Styling | **Tailwind CSS 4** with design tokens in `@theme`; a monochrome, editorial look with sharp corners |
+| Database | **PostgreSQL** via **Prisma 6**: Neon in production, embedded Postgres locally |
+| Auth | **better-auth**: email/password, Google OAuth, password reset, session cookies |
+| Validation | **zod** on every Server Action |
+| Storage | **Vercel Blob** for listing photos in production, local disk in development |
+| UI | motion (animations), embla-carousel (sliders), lucide-react (icons), sonner (toasts) |
+| Hosting | **Vercel** (`fra1`), with the database and blob store in the same region |
+
+## Implementation notes
+
+- **Server-first.** Pages are async Server Components that query Prisma directly. Mutations are Server Actions validated with zod and followed by `revalidatePath`, so no separate REST layer is needed.
+- **Streaming.** Home rows and filtered lists are wrapped in `Suspense` with skeleton fallbacks, so the shell renders immediately.
+- **Auth guard.** `proxy.ts` does an optimistic cookie check and redirects to `/prijava?next=…`. The real session check happens on the server in every page and action.
+- **Optimistic UI.** Likes use `useOptimistic`. The listing form submits manually so React does not reset fields when validation fails.
+- **Uploads.** Images are compressed client-side and sent to `/api/upload`, which writes to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set and to `storage/uploads` otherwise. The listing schema only accepts URLs from these sources.
+- **Chat.** Polls `/api/conversations/[id]/messages?after=` every 3 s and marks messages read when they are seen.
+- **Localized routes.** All URLs are in the local language. The old English paths 301-redirect via `next.config.ts`.
+- **Zero-setup local DB.** `npm run db` starts a real PostgreSQL through `embedded-postgres`, so no Docker or Homebrew is needed.
 
 ---
 
-## Pokretanje lokalno
+## Getting started
 
-Potrebno: **Node.js 20+**. Postgres ne moraš instalirati, jer projekt sam pokreće lokalni server (`embedded-postgres`).
+Requires **Node.js 20+**.
 
 ```bash
 git clone https://github.com/bujakasha21/dvaput.git
 cd dvaput
 npm install
-cp .env.example .env          # pa upiši BETTER_AUTH_SECRET (openssl rand -hex 32)
+cp .env.example .env        # set BETTER_AUTH_SECRET (openssl rand -hex 32)
 ```
 
-U **prvom terminalu** pokreni bazu i ostavi je da radi:
+Terminal 1 starts a local PostgreSQL on port 5433 (data lives in `./.pgdata`):
 
 ```bash
-npm run db                    # PostgreSQL na portu 5433, podaci u ./.pgdata
+npm run db
 ```
 
-U **drugom terminalu**:
+Terminal 2:
 
 ```bash
-npm run db:push               # kreira tabele iz prisma/schema.prisma
-npm run db:seed               # demo korisnici i oglasi (BRIŠE postojeće podatke!)
-npm run dev                   # http://localhost:3000
+npm run db:push             # create tables from prisma/schema.prisma
+npm run db:seed             # demo users and listings (wipes existing data)
+npm run dev                 # http://localhost:3000
 ```
 
-Demo nalozi iz seeda (šifra `demo1234`): `demo@dvaput.ba`, `ana@demo.ba`, `marko@demo.ba`, `lejla@demo.ba`.
+Seeded accounts (password `demo1234`): `demo@dvaput.ba`, `ana@demo.ba`, `marko@demo.ba`, `lejla@demo.ba`.
 
-Ako već imaš svoj Postgres, preskoči `npm run db` i upiši njegov `DATABASE_URL` u `.env`.
+### Scripts
 
-### Skripte
-
-| Komanda | Šta radi |
+| Command | Description |
 |---|---|
 | `npm run dev` | dev server |
-| `npm run build` / `npm start` | produkcijski build i pokretanje |
+| `npm run build` / `npm start` | production build / start |
 | `npm run lint` | ESLint |
-| `npm run db` | lokalni PostgreSQL (embedded) |
-| `npm run db:push` | sinhronizuje šemu sa bazom |
-| `npm run db:seed` | puni bazu demo podacima |
-| `npm run db:studio` | Prisma Studio, pregled baze u browseru |
+| `npm run db` | local embedded PostgreSQL |
+| `npm run db:push` | sync the Prisma schema to the database |
+| `npm run db:seed` | seed demo data |
+| `npm run db:studio` | Prisma Studio |
 
----
+### Environment variables
 
-## Varijable okruženja (`.env`)
-
-| Varijabla | Opis |
+| Variable | Description |
 |---|---|
-| `DATABASE_URL` | Postgres konekcija. Lokalno: `postgresql://dvaput:dvaput@localhost:5433/dvaput` |
-| `BETTER_AUTH_SECRET` | tajni ključ za sesije: `openssl rand -hex 32` |
-| `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL` | adresa aplikacije (`http://localhost:3000`) |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google prijava (opcionalno, vidi ispod) |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | slanje maila za reset šifre (opcionalno) |
-
-### Google prijava
-1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials), pa *Create credentials* i *OAuth client ID* (tip *Web application*).
-2. *Authorized redirect URI*: `http://localhost:3000/api/auth/callback/google` (za produkciju dodaj i svoju domenu).
-3. Upiši ID i secret u `.env` i restartuj `npm run dev`. Dugme „Nastavi s Google" se tada uključuje.
+| `DATABASE_URL` | Postgres connection string (locally `postgresql://dvaput:dvaput@localhost:5433/dvaput`) |
+| `BETTER_AUTH_SECRET` | session secret: `openssl rand -hex 32` |
+| `BETTER_AUTH_URL` | app URL (`http://localhost:3000` locally) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | optional. Google sign-in is enabled when both are set. Redirect URI: `<app url>/api/auth/callback/google` |
+| `BLOB_READ_WRITE_TOKEN` | optional. Enables Vercel Blob uploads |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | optional. Without SMTP, reset links are printed to the server console |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | optional. Contact email shown on the privacy and terms pages |
 
 ---
 
-## Struktura projekta
+## Project structure
 
 ```
 prisma/
-  schema.prisma          korisnici, sesije, oglasi, slike, lajkovi, komentari, dojmovi, razgovori, poruke
-  seed.ts                demo podaci
-scripts/db.mjs           lokalni embedded PostgreSQL
+  schema.prisma        users, sessions, listings, images, likes, comments, reviews, conversations, messages
+  seed.ts              demo data
+scripts/db.mjs         embedded PostgreSQL for local development
 src/
-  proxy.ts               preusmjerava neprijavljene sa zaštićenih ruta na /prijava
-  lib/
-    auth.ts              better-auth konfiguracija (server)
-    auth-client.ts       better-auth klijent
-    queries.ts           zajednički upiti, nivo povjerenja
-    collections.ts       kategorije i kolekcije (slugovi za /kategorije/*)
-    constants.ts         nazivi kategorija, stanja, veličine
+  proxy.ts             redirects signed-out users away from protected routes
+  lib/                 auth (server + client), Prisma client, shared queries, trust level, categories
   app/
-    page.tsx             početna (banner + redovi po kategorijama)
-    kategorije/[slug]/   lista sa filterima
-    oglasi/[id]/         oglas, komentari, akcije vlasnika
-    oglasi/novi/         nova objava
-    oglasi/[id]/uredi/   izmjena oglasa
-    moj-ormar/           dashboard + podešavanja
-    poruke/              lista razgovora + chat
-    korisnici/[id]/      javni profil i dojmovi
-    (auth)/              prijava, registracija, zaboravljena i nova lozinka
-    actions/             server akcije (oglasi, lajkovi, komentari, dojmovi, chat, profil)
-    api/upload           upload slika → storage/uploads
-    api/conversations    polling novih poruka (svake 3 s)
-    uploads/[file]       servira uploadovane slike
-  components/            navbar, banner, kartice, forme, slajderi, UI primitivi
+    page.tsx           home (banner + category rows)
+    kategorije/[slug]  category pages with filters
+    oglasi/            listing detail, new listing, edit listing
+    moj-ormar/         seller dashboard + settings
+    poruke/            conversations + chat
+    korisnici/[id]     public profile with reviews
+    (auth)/            sign in, sign up, forgot / reset password
+    actions/           Server Actions (listings, likes, comments, reviews, chat, profile)
+    api/               auth handler, image upload, chat polling
+  components/          navbar, banner, cards, forms, sliders, UI primitives
 ```
 
-### Rute
+## Deployment
 
-| Adresa | Stranica |
-|---|---|
-| `/` | početna |
-| `/kategorije/sve`, `/kategorije/zene`, `/kategorije/patike`… | liste sa filterima |
-| `/oglasi/[id]` | oglas |
-| `/oglasi/novi`, `/oglasi/[id]/uredi` | objava i izmjena (prijava obavezna) |
-| `/moj-ormar`, `/moj-ormar?tab=zavrseno\|sacuvano\|dojmovi`, `/moj-ormar/podesavanja` | dashboard |
-| `/poruke`, `/poruke/[id]` | chat |
-| `/korisnici/[id]` | javni profil |
-| `/prijava`, `/registracija`, `/zaboravljena-lozinka`, `/nova-lozinka` | nalog |
-
-Stare engleske adrese (`/login`, `/dashboard`, `/listings/…`) trajno (301) preusmjeravaju na nove, a podešene su u `next.config.ts`.
-
----
-
-## Deploy (Vercel + Neon)
-
-Produkcija: **https://dvaput.vercel.app**
-
-- Baza je **Neon** (Vercel → Storage → `dvaput-db`, region Frankfurt). Integracija sama postavlja `DATABASE_URL` i ostale `PG*` varijable.
-- Na Vercelu treba ručno postaviti `BETTER_AUTH_SECRET` i `BETTER_AUTH_URL` (`https://dvaput.vercel.app`).
-- Slike oglasa idu na **Vercel Blob** (`dvaput-blob`, Frankfurt, public) kad postoji `BLOB_READ_WRITE_TOKEN`. Lokalno se spremaju u `storage/uploads`.
-- Funkcije rade u `fra1` (`vercel.json`), u istom regionu kao baza.
-- Promjene šeme se šalju na produkcijsku bazu ručno: connection string bez poolera upiši u lokalni `.env.neon` (gitignore ga drži van gita), pa pokreni:
+The live demo runs on **Vercel** with a **Neon** Postgres database and a **Vercel Blob** store, all in Frankfurt.
+Pushing to `main` deploys automatically. To apply schema changes to the production database, run:
 
 ```bash
-set -a && . ./.env.neon && set +a && npx prisma db push
+DATABASE_URL="<neon unpooled url>" npx prisma db push
 ```
 
-## Prije produkcije
+## Roadmap
 
-- **Mail:** SMTP podaci (npr. Resend, Postmark, Brevo) za reset šifre.
-- **Google OAuth:** dodati produkcijsku domenu u redirect URI.
-- **Chat:** trenutno radi preko pollinga. Za real-time bi trebali Pusher, Ably ili WebSocket.
-
-## Plan
-
-- [ ] Plaćanje i zaštita kupca
-- [ ] Notifikacije (email/push) za nove poruke i lajkove
-- [ ] Ponude („pošalji ponudu" ispod cijene)
-- [ ] Praćenje prodavača i feed
-- [ ] Prijava neprimjerenih oglasa i moderacija
+- [ ] Offers ("make an offer" below the asking price)
+- [ ] Email / push notifications for messages and likes
+- [ ] Real-time chat (WebSockets) instead of polling
+- [ ] Follow sellers, personalized feed
+- [ ] Reporting and moderation
