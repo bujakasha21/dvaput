@@ -71,6 +71,11 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
         <Button type="submit" className="w-full" size="lg" loading={loading}>
           Registruj se
         </Button>
+        <p className="text-center text-xs text-muted">
+          Registracijom prihvataš{" "}
+          <Link href="/uslovi" className="underline underline-offset-4 hover:text-ink">uslove korištenja</Link> i{" "}
+          <Link href="/privatnost" className="underline underline-offset-4 hover:text-ink">politiku privatnosti</Link>.
+        </p>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         Već imaš račun?{" "}
