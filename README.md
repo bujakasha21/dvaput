@@ -153,10 +153,22 @@ Stare engleske adrese (`/login`, `/dashboard`, `/listings/…`) trajno (301) pre
 
 ---
 
+## Deploy (Vercel + Neon)
+
+Produkcija: **https://dvaput.vercel.app**
+
+- Baza je **Neon** (Vercel → Storage → `dvaput-db`, region Frankfurt). Integracija sama postavlja `DATABASE_URL` i ostale `PG*` varijable.
+- Na Vercelu treba ručno postaviti `BETTER_AUTH_SECRET` i `BETTER_AUTH_URL` (`https://dvaput.vercel.app`).
+- Funkcije rade u `fra1` (`vercel.json`), u istom regionu kao baza.
+- Promjene šeme se šalju na produkcijsku bazu ručno: connection string bez poolera upiši u lokalni `.env.neon` (gitignore ga drži van gita), pa pokreni:
+
+```bash
+set -a && . ./.env.neon && set +a && npx prisma db push
+```
+
 ## Prije produkcije
 
 - **Slike:** lokalni `storage/` ne radi na serverless hostingu (Vercel). Treba ih prebaciti na S3, Cloudflare R2 ili Cloudinary (`src/app/api/upload/route.ts`).
-- **Baza:** hostovani Postgres (Neon, Supabase, Railway…) u `DATABASE_URL`, pa `npm run db:push`.
 - **Mail:** SMTP podaci (npr. Resend, Postmark, Brevo) za reset šifre.
 - **Google OAuth:** dodati produkcijsku domenu u redirect URI.
 - **Chat:** trenutno radi preko pollinga. Za real-time bi trebali Pusher, Ably ili WebSocket.
