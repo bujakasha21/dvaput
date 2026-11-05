@@ -13,9 +13,10 @@ const RESEND_AFTER_MS = 60 * 1000;
 const identifier = (sessionId: string) => `login-code:${sessionId}`;
 const hash = (code: string) => createHash("sha256").update(`${code}:${process.env.BETTER_AUTH_SECRET}`).digest("hex");
 
+/** Vraća false ako mail nije otišao; prijava zato ne pada, a /potvrda nudi ponovno slanje */
 export async function sendLoginCode(sessionId: string, userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
-  if (!user) return;
+  if (!user) return false;
 
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
   await prisma.verification.deleteMany({ where: { identifier: identifier(sessionId) } });
@@ -24,12 +25,18 @@ export async function sendLoginCode(sessionId: string, userId: string) {
   });
 
   const url = `${process.env.BETTER_AUTH_URL}/potvrda?kod=${code}`;
-  await sendMail({
+  return sendMail({
     to: user.email,
     subject: `${code} je tvoj kod za potvrdu – Dvaput`,
     text: `Zdravo ${user.name},\n\nTvoj kod za potvrdu naloga: ${code}\n\nIli otvori link u istom browseru:\n${url}\n\nKod važi 10 minuta. Ako se nisi ti prijavljivao/la, ignoriši ovaj mail.`,
     html: `<p>Zdravo ${user.name},</p><p>Tvoj kod za potvrdu naloga:</p><p style="font-size:28px;font-weight:600;letter-spacing:6px;margin:8px 0 20px">${code}</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Verifikuj svoj nalog</a></p><p style="color:#888">Kod važi 10 minuta. Ako se nisi ti prijavljivao/la, ignoriši ovaj mail.</p>`,
-  });
+  }).then(
+    () => true,
+    (e) => {
+      console.error("[login-code] slanje maila nije uspjelo:", e);
+      return false;
+    },
+  );
 }
 
 export async function canResendLoginCode(sessionId: string) {

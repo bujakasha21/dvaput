@@ -18,6 +18,6 @@ export async function resendLoginCode(): Promise<{ error?: string }> {
   const session = await getRawSession();
   if (!session?.session.pendingVerification) return { error: "Sesija je istekla. Prijavi se ponovo." };
   if (!(await canResendLoginCode(session.session.id))) return { error: "Sačekaj minutu prije novog koda." };
-  await sendLoginCode(session.session.id, session.user.id);
+  if (!(await sendLoginCode(session.session.id, session.user.id))) return { error: "Slanje maila nije uspjelo. Pokušaj ponovo za par minuta." };
   return {};
 }
