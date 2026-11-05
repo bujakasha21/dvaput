@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Zaboravljena šifra?</h1>
       <p className="mt-1.5 mb-8 text-sm text-muted">Upiši email i poslat ćemo ti link za novu šifru.</p>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form method="post" onSubmit={onSubmit} className="space-y-4">
         <Field label="Email">
           <Input name="email" type="email" required autoComplete="email" placeholder="ime@email.com" />
         </Field>

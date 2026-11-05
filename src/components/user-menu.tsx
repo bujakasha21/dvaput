@@ -6,12 +6,15 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { LogOut, MessageCircle } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
+import { wait } from "@/lib/utils";
 import { Avatar } from "./avatar";
+import { SIGN_OUT_MS, SignOutTransition } from "./sign-out-transition";
 
 type Props = { user: { id: string; name: string; email: string; image: string | null }; unread: number };
 
 export function UserMenu({ user, unread }: Props) {
   const [open, setOpen] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -34,6 +37,7 @@ export function UserMenu({ user, unread }: Props) {
 
   return (
     <div className="flex items-center gap-1" ref={ref}>
+      {leaving && <SignOutTransition name={user.name} />}
       <Link href="/poruke" className="relative grid size-9 place-items-center rounded-full transition-colors hover:bg-subtle" aria-label="Poruke">
         <MessageCircle className="size-[18px] stroke-[1.75]" />
         {unread > 0 && <span className="absolute top-2 right-2 size-2 rounded-full bg-like ring-2 ring-white" />}
@@ -67,10 +71,15 @@ export function UserMenu({ user, unread }: Props) {
               <div className="h-px bg-line" />
               <button
                 onClick={async () => {
-                  await signOut();
                   setOpen(false);
-                  router.push("/");
-                  router.refresh();
+                  setLeaving(true);
+                  router.prefetch("/");
+                  try {
+                    await Promise.all([signOut(), wait(SIGN_OUT_MS)]);
+                  } finally {
+                    router.push("/");
+                    router.refresh();
+                  }
                 }}
                 className="mt-1 flex w-full items-center gap-2 px-4 py-2 text-sm text-muted transition-colors hover:bg-subtle hover:text-ink"
               >

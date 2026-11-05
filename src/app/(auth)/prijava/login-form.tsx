@@ -7,13 +7,17 @@ import { signIn } from "@/lib/auth-client";
 import { GoogleButton } from "@/components/google-button";
 import { Button, Field, Input } from "@/components/ui";
 import { AuthTransition, TRANSITION_MS } from "@/components/auth-transition";
+import { CheckEmail } from "@/components/check-email";
 import { wait } from "@/lib/utils";
 
-export function LoginForm({ googleEnabled, callbackURL }: { googleEnabled: boolean; callbackURL: string }) {
+type Props = { googleEnabled: boolean; callbackURL: string; oauthError: string | null };
+
+export function LoginForm({ googleEnabled, callbackURL, oauthError }: Props) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(oauthError);
   const [loading, setLoading] = useState(false);
   const [welcome, setWelcome] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,8 +28,14 @@ export function LoginForm({ googleEnabled, callbackURL }: { googleEnabled: boole
       email: String(data.get("email")),
       password: String(data.get("password")),
       rememberMe: true,
+      callbackURL,
     });
     if (error) {
+      // better-auth je već poslao novi link za potvrdu (sendOnSignIn)
+      if (error.code === "EMAIL_NOT_VERIFIED") {
+        setPendingEmail(String(data.get("email")));
+        return;
+      }
       setError(error.status === 401 ? "Pogrešan email ili šifra." : (error.message ?? "Nešto nije u redu."));
       setLoading(false);
       return;
@@ -41,13 +51,15 @@ export function LoginForm({ googleEnabled, callbackURL }: { googleEnabled: boole
     }
   }
 
+  if (pendingEmail) return <CheckEmail email={pendingEmail} callbackURL={callbackURL} />;
+
   return (
     <>
       {welcome !== null && <AuthTransition name={welcome} />}
       <h1 className="text-2xl font-semibold tracking-tight">Dobro došli nazad</h1>
       <p className="mt-1.5 mb-8 text-sm text-muted">Prijavi se i nastavi gdje si stao/la.</p>
       <GoogleButton enabled={googleEnabled} callbackURL={callbackURL} />
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form method="post" onSubmit={onSubmit} className="space-y-4">
         <Field label="Email">
           <Input name="email" type="email" autoComplete="email" required placeholder="ime@email.com" />
         </Field>

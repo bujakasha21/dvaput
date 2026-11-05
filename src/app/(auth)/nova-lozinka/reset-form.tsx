@@ -31,7 +31,7 @@ export function ResetForm({ token }: { token: string }) {
     <>
       <h1 className="text-2xl font-semibold tracking-tight">Nova šifra</h1>
       <p className="mt-1.5 mb-8 text-sm text-muted">Izaberi novu šifru za svoj račun.</p>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form method="post" onSubmit={onSubmit} className="space-y-4">
         <Field label="Nova šifra" hint="Najmanje 8 znakova">
           <Input name="password" type="password" required minLength={8} autoComplete="new-password" />
         </Field>

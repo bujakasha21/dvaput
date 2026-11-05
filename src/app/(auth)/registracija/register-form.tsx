@@ -7,6 +7,7 @@ import { signUp } from "@/lib/auth-client";
 import { GoogleButton } from "@/components/google-button";
 import { Button, Field, Input } from "@/components/ui";
 import { AuthTransition, TRANSITION_MS } from "@/components/auth-transition";
+import { CheckEmail } from "@/components/check-email";
 import { wait } from "@/lib/utils";
 
 export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
@@ -14,6 +15,7 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [welcome, setWelcome] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,17 +27,24 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
     }
     setLoading(true);
     setError(null);
+    const email = String(data.get("email")).trim();
     const { data: result, error } = await signUp.email({
       name: String(data.get("name")).trim(),
-      email: String(data.get("email")).trim(),
+      email,
       password,
+      callbackURL: "/moj-ormar",
     });
     if (error) {
       setError(error.code === "USER_ALREADY_EXISTS" || error.status === 422 ? "Račun s ovim emailom već postoji." : (error.message ?? "Registracija nije uspjela."));
       setLoading(false);
       return;
     }
-    setWelcome(result?.user.name ?? "");
+    // Bez sesije dok korisnik ne potvrdi email
+    if (!result?.token) {
+      setPendingEmail(email);
+      return;
+    }
+    setWelcome(result.user.name);
     try {
       router.prefetch("/moj-ormar");
       await wait(TRANSITION_MS);
@@ -46,13 +55,15 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
     }
   }
 
+  if (pendingEmail) return <CheckEmail email={pendingEmail} callbackURL="/moj-ormar" />;
+
   return (
     <>
       {welcome !== null && <AuthTransition name={welcome} />}
       <h1 className="text-2xl font-semibold tracking-tight">Napravi račun</h1>
       <p className="mt-1.5 mb-8 text-sm text-muted">Objavi prvi oglas za manje od minute.</p>
       <GoogleButton enabled={googleEnabled} />
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form method="post" onSubmit={onSubmit} className="space-y-4">
         <Field label="Ime i prezime">
           <Input name="name" required minLength={2} autoComplete="name" placeholder="Vaše ime i prezime" />
         </Field>

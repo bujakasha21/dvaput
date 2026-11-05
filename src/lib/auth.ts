@@ -12,6 +12,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    requireEmailVerification: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       await sendMail({
@@ -19,6 +20,20 @@ export const auth = betterAuth({
         subject: "Reset šifre – Dvaput",
         text: `Zdravo ${user.name},\n\nKlikni na link da postaviš novu šifru (važi 1h):\n${url}\n\nAko nisi tražio/la reset, ignoriši ovaj mail.`,
         html: `<p>Zdravo ${user.name},</p><p>Klikni na dugme da postaviš novu šifru (link važi 1h):</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Postavi novu šifru</a></p><p style="color:#888">Ako nisi tražio/la reset, ignoriši ovaj mail.</p>`,
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendMail({
+        to: user.email,
+        subject: "Potvrdi email – Dvaput",
+        text: `Zdravo ${user.name},\n\nKlikni na link da potvrdiš email adresu (važi 24h):\n${url}\n\nAko nisi pravio/la račun na Dvaput, ignoriši ovaj mail.`,
+        html: `<p>Zdravo ${user.name},</p><p>Klikni na dugme da potvrdiš email adresu (link važi 24h):</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Potvrdi email</a></p><p style="color:#888">Ako nisi pravio/la račun na Dvaput, ignoriši ovaj mail.</p>`,
       });
     },
   },
@@ -36,6 +51,8 @@ export const auth = betterAuth({
       city: { type: "string", required: false, input: true },
     },
   },
+  // Greške OAuth callbacka (npr. account_not_linked) idu na prijavu s porukom umjesto na /api/auth/error
+  onAPIError: { errorURL: "/prijava" },
   plugins: [nextCookies()],
 });
 
