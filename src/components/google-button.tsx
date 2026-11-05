@@ -17,7 +17,8 @@ export function GoogleButton({ enabled, callbackURL = "/moj-ormar" }: { enabled:
         title={enabled ? undefined : "Google prijava nije podešena (GOOGLE_CLIENT_ID u .env)"}
         onClick={async () => {
           setLoading(true);
-          await signIn.social({ provider: "google", callbackURL });
+          // Nakon Googlea korisnik mora unijeti kod iz maila (/potvrda) prije ulaska
+          await signIn.social({ provider: "google", callbackURL: `/potvrda?next=${encodeURIComponent(callbackURL)}` });
         }}
       >
         {!loading && (

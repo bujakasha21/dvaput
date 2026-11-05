@@ -4,6 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 import { headers } from "next/headers";
 import { prisma } from "./prisma";
 import { sendMail } from "./mail";
+import { sendLoginCode } from "./login-code";
 
 const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
@@ -45,6 +46,25 @@ export const auth = betterAuth({
         },
       }
     : {},
+  session: {
+    additionalFields: {
+      pendingVerification: { type: "boolean", required: false, defaultValue: false, input: false },
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        // Sesija iz Google prijave ne vrijedi dok korisnik ne unese kod iz maila (/potvrda)
+        before: async (session, ctx) => {
+          const path = ctx?.path ?? "";
+          if (path.startsWith("/callback") || path === "/sign-in/social") return { data: { ...session, pendingVerification: true } };
+        },
+        after: async (session) => {
+          if (session.pendingVerification) await sendLoginCode(session.id, session.userId);
+        },
+      },
+    },
+  },
   user: {
     additionalFields: {
       bio: { type: "string", required: false, input: true },
@@ -58,7 +78,13 @@ export const auth = betterAuth({
 
 export const isGoogleEnabled = googleEnabled;
 
+/** Sesija koja čeka kod iz maila (Google prijava) se ovdje ne računa kao prijava */
 export async function getSession() {
+  const session = await getRawSession();
+  return session?.session.pendingVerification ? null : session;
+}
+
+export async function getRawSession() {
   return auth.api.getSession({ headers: await headers() });
 }
 

@@ -46,6 +46,8 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Google prijava čeka 6-cifreni kod iz maila (src/lib/login-code.ts)
+  pendingVerification Boolean @default(false)
 
   @@index([userId])
   @@map("session")
