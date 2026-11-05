@@ -13,7 +13,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    requireEmailVerification: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
       await sendMail({
@@ -21,20 +20,6 @@ export const auth = betterAuth({
         subject: "Reset šifre – Dvaput",
         text: `Zdravo ${user.name},\n\nKlikni na link da postaviš novu šifru (važi 1h):\n${url}\n\nAko nisi tražio/la reset, ignoriši ovaj mail.`,
         html: `<p>Zdravo ${user.name},</p><p>Klikni na dugme da postaviš novu šifru (link važi 1h):</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Postavi novu šifru</a></p><p style="color:#888">Ako nisi tražio/la reset, ignoriši ovaj mail.</p>`,
-      });
-    },
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    autoSignInAfterVerification: true,
-    expiresIn: 60 * 60 * 24,
-    sendVerificationEmail: async ({ user, url }) => {
-      await sendMail({
-        to: user.email,
-        subject: "Potvrdi email – Dvaput",
-        text: `Zdravo ${user.name},\n\nKlikni na link da potvrdiš email adresu (važi 24h):\n${url}\n\nAko nisi pravio/la račun na Dvaput, ignoriši ovaj mail.`,
-        html: `<p>Zdravo ${user.name},</p><p>Klikni na dugme da potvrdiš email adresu (link važi 24h):</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Potvrdi email</a></p><p style="color:#888">Ako nisi pravio/la račun na Dvaput, ignoriši ovaj mail.</p>`,
       });
     },
   },
@@ -51,13 +36,32 @@ export const auth = betterAuth({
       pendingVerification: { type: "boolean", required: false, defaultValue: false, input: false },
     },
   },
+  account: {
+    accountLinking: {
+      // Google se smije vezati i za nepotvrđen nalog sa šifrom; šifru tada brišemo (hook ispod)
+      requireLocalEmailVerified: false,
+    },
+  },
   databaseHooks: {
+    account: {
+      create: {
+        // Ako je neko registrovao tuđi email sa šifrom pa vlasnik uđe Googleom, napadačeva šifra ne smije ostati
+        after: async (account) => {
+          if (account.providerId === "credential") return;
+          const user = await prisma.user.findUnique({ where: { id: account.userId }, select: { emailVerified: true } });
+          if (user && !user.emailVerified) await prisma.account.deleteMany({ where: { userId: account.userId, providerId: "credential" } });
+        },
+      },
+    },
     session: {
       create: {
-        // Sesija iz Google prijave ne vrijedi dok korisnik ne unese kod iz maila (/potvrda)
+        // Sesija ne vrijedi dok korisnik ne unese kod iz maila (/potvrda):
+        // Google prijava uvijek, prijava šifrom dok email nije potvrđen
         before: async (session, ctx) => {
           const path = ctx?.path ?? "";
-          if (path.startsWith("/callback") || path === "/sign-in/social") return { data: { ...session, pendingVerification: true } };
+          const oauth = path.startsWith("/callback") || path === "/sign-in/social";
+          const user = oauth ? null : await prisma.user.findUnique({ where: { id: session.userId }, select: { emailVerified: true } });
+          if (oauth || (user && !user.emailVerified)) return { data: { ...session, pendingVerification: true } };
         },
         after: async (session) => {
           if (session.pendingVerification) await sendLoginCode(session.id, session.userId);
@@ -78,7 +82,7 @@ export const auth = betterAuth({
 
 export const isGoogleEnabled = googleEnabled;
 
-/** Sesija koja čeka kod iz maila (Google prijava) se ovdje ne računa kao prijava */
+/** Sesija koja čeka kod iz maila (/potvrda) se ovdje ne računa kao prijava */
 export async function getSession() {
   const session = await getRawSession();
   return session?.session.pendingVerification ? null : session;

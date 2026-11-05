@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getRawSession } from "@/lib/auth";
 import { CodeForm } from "./code-form";
 
-export const metadata: Metadata = { title: "Potvrda prijave" };
+export const metadata: Metadata = { title: "Potvrda naloga" };
 
 export default async function ConfirmPage({ searchParams }: PageProps<"/potvrda">) {
   const { next, kod } = await searchParams;

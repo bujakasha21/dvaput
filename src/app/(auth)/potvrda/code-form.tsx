@@ -103,7 +103,7 @@ export function CodeForm({ email, callbackURL, initialCode }: Props) {
       <span className="mb-5 flex size-12 items-center justify-center rounded-full bg-ink text-white">
         <ShieldCheck className="size-5" />
       </span>
-      <h1 className="text-2xl font-semibold tracking-tight">Potvrdi prijavu</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Potvrdi svoj nalog</h1>
       <p className="mt-1.5 mb-8 text-sm text-muted">
         Poslali smo 6-cifreni kod na <span className="font-medium text-ink">{email}</span>. Upiši ga ili klikni &quot;Verifikuj svoj nalog&quot; u mailu.
       </p>

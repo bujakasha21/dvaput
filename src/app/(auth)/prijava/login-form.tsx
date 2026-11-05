@@ -7,7 +7,6 @@ import { signIn } from "@/lib/auth-client";
 import { GoogleButton } from "@/components/google-button";
 import { Button, Field, Input } from "@/components/ui";
 import { AuthTransition, TRANSITION_MS } from "@/components/auth-transition";
-import { CheckEmail } from "@/components/check-email";
 import { wait } from "@/lib/utils";
 
 type Props = { googleEnabled: boolean; callbackURL: string; oauthError: string | null };
@@ -17,7 +16,6 @@ export function LoginForm({ googleEnabled, callbackURL, oauthError }: Props) {
   const [error, setError] = useState<string | null>(oauthError);
   const [loading, setLoading] = useState(false);
   const [welcome, setWelcome] = useState<string | null>(null);
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,19 +26,18 @@ export function LoginForm({ googleEnabled, callbackURL, oauthError }: Props) {
       email: String(data.get("email")),
       password: String(data.get("password")),
       rememberMe: true,
-      callbackURL,
     });
     if (error) {
-      // better-auth je već poslao novi link za potvrdu (sendOnSignIn)
-      if (error.code === "EMAIL_NOT_VERIFIED") {
-        setPendingEmail(String(data.get("email")));
-        return;
-      }
       setError(error.status === 401 ? "Pogrešan email ili šifra." : (error.message ?? "Nešto nije u redu."));
       setLoading(false);
       return;
     }
-    setWelcome(result?.user.name ?? "");
+    // Email još nije potvrđen: sesija čeka kod iz maila
+    if (!result?.user.emailVerified) {
+      router.push(`/potvrda?next=${encodeURIComponent(callbackURL)}`);
+      return;
+    }
+    setWelcome(result.user.name);
     try {
       router.prefetch(callbackURL);
       await wait(TRANSITION_MS);
@@ -50,8 +47,6 @@ export function LoginForm({ googleEnabled, callbackURL, oauthError }: Props) {
       router.refresh();
     }
   }
-
-  if (pendingEmail) return <CheckEmail email={pendingEmail} callbackURL={callbackURL} />;
 
   return (
     <>

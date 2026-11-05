@@ -3,7 +3,7 @@ import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto"
 import { prisma } from "./prisma";
 import { sendMail } from "./mail";
 
-// Svaka Google prijava mora potvrditi 6-cifreni kod iz maila prije nego što sesija vrijedi.
+// Google prijava i nalog s nepotvrđenim emailom moraju unijeti 6-cifreni kod iz maila prije nego što sesija vrijedi.
 // Kod je u tabeli verification (hash + broj pokušaja), vezan za konkretnu sesiju.
 
 const TTL_MS = 10 * 60 * 1000;
@@ -26,9 +26,9 @@ export async function sendLoginCode(sessionId: string, userId: string) {
   const url = `${process.env.BETTER_AUTH_URL}/potvrda?kod=${code}`;
   await sendMail({
     to: user.email,
-    subject: `${code} je tvoj kod za prijavu – Dvaput`,
-    text: `Zdravo ${user.name},\n\nTvoj kod za prijavu: ${code}\n\nIli otvori link u istom browseru:\n${url}\n\nKod važi 10 minuta. Ako se nisi ti prijavljivao/la, ignoriši ovaj mail.`,
-    html: `<p>Zdravo ${user.name},</p><p>Tvoj kod za prijavu:</p><p style="font-size:28px;font-weight:600;letter-spacing:6px;margin:8px 0 20px">${code}</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Verifikuj svoj nalog</a></p><p style="color:#888">Kod važi 10 minuta. Ako se nisi ti prijavljivao/la, ignoriši ovaj mail.</p>`,
+    subject: `${code} je tvoj kod za potvrdu – Dvaput`,
+    text: `Zdravo ${user.name},\n\nTvoj kod za potvrdu naloga: ${code}\n\nIli otvori link u istom browseru:\n${url}\n\nKod važi 10 minuta. Ako se nisi ti prijavljivao/la, ignoriši ovaj mail.`,
+    html: `<p>Zdravo ${user.name},</p><p>Tvoj kod za potvrdu naloga:</p><p style="font-size:28px;font-weight:600;letter-spacing:6px;margin:8px 0 20px">${code}</p><p><a href="${url}" style="background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Verifikuj svoj nalog</a></p><p style="color:#888">Kod važi 10 minuta. Ako se nisi ti prijavljivao/la, ignoriši ovaj mail.</p>`,
   });
 }
 
@@ -49,7 +49,7 @@ export async function checkLoginCode(sessionId: string, code: string): Promise<C
   if (/^\d{6}$/.test(code) && timingSafeEqual(Buffer.from(stored), Buffer.from(hash(code)))) {
     await prisma.$transaction([
       prisma.verification.delete({ where: { id: row.id } }),
-      prisma.session.update({ where: { id: sessionId }, data: { pendingVerification: false } }),
+      prisma.session.update({ where: { id: sessionId }, data: { pendingVerification: false, user: { update: { emailVerified: true } } } }),
     ]);
     return "ok";
   }
